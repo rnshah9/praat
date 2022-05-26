@@ -1,5 +1,5 @@
 project: rnshah9/praat
-target: praat
+target: praat-barren
 
 cmds:
   - cmd: /repo/praat_barren --run @@
