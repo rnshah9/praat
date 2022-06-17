@@ -1,4 +1,4 @@
-project: rnshah9/praat
+project: praat
 target: praat-barren
 
 cmds:
