@@ -2,4 +2,4 @@ project: praat
 target: praat-barren
 
 cmds:
-  - cmd: /repo/praat_barren --run @@
+  - cmd: /praat_barren --run @@
