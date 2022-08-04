@@ -156,10 +156,6 @@ static conststring32 formatStringArray (constSTRVEC strings, kUi_stringArrayForm
 
 Thing_implement (UiField, Thing, 0);
 
-void structUiField :: v_destroy () noexcept {
-	our UiField_Parent :: v_destroy ();
-}
-
 static autoUiField UiField_create (_kUiField_type type, conststring32 nameOrNull) {
 	autoUiField me = Thing_new (UiField);
 	my type = type;
@@ -597,12 +593,12 @@ void Ui_setAllowExecutionHook (bool (*allowExecutionHook) (void *closure), void 
 	theAllowExecutionClosureHint = allowExecutionClosure;
 }
 
-void structUiForm :: v_destroy () noexcept {
+void structUiForm :: v9_destroy () noexcept {
 	if (our d_dialogForm) {
 		trace (U"form <<", our d_dialogForm -> name.get(), U">>, invoking-button title <<", our invokingButtonTitle.get(), U">>");
 		GuiObject_destroy (our d_dialogForm -> d_widget);   // BUG: make sure this destroys the shell
 	}
-	our UiForm_Parent :: v_destroy ();
+	our UiForm_Parent :: v9_destroy ();
 }
 
 static void gui_button_cb_revert (UiForm me, GuiButtonEvent /* event */) {
@@ -918,7 +914,7 @@ static void commonOkCallback (UiForm /* dia */, integer /* narg */, Stackel /* a
 	Interpreter interpreter, conststring32 /* invokingButtonTitle */, bool /* modified */, void *closure)
 {
 	EditorCommand cmd = (EditorCommand) closure;
-	cmd -> commandCallback (cmd -> d_editor, cmd, cmd -> d_uiform.get(), 0, nullptr, nullptr, interpreter);
+	cmd -> commandCallback (cmd -> sender___, cmd, cmd -> d_uiform.get(), 0, nullptr, nullptr, interpreter);
 }
 
 autoUiForm UiForm_createE (EditorCommand cmd, conststring32 title, conststring32 invokingButtonTitle, conststring32 helpTitle) {
@@ -1414,7 +1410,7 @@ void UiForm_finish (UiForm me) {
 				appendColon ();
 				const int ylabel = thy y + 5 - headerLabelHeight - Gui_VERTICAL_DIALOG_SPACING_SAME;
 				thy label = GuiLabel_createShown (form,
-					Gui_LEFT_DIALOG_SPACING, dialogWidth /* allow to extend into the margin */,
+					Gui_LEFT_DIALOG_SPACING, dialogWidth - Gui_LEFT_DIALOG_SPACING - 100,
 					ylabel, ylabel + textFieldHeight,
 					theFinishBuffer.string, 0
 				);
@@ -1432,7 +1428,7 @@ void UiForm_finish (UiForm me) {
 				appendColon ();
 				const int ylabel = thy y + 5 - headerLabelHeight - Gui_VERTICAL_DIALOG_SPACING_SAME;
 				thy label = GuiLabel_createShown (form,
-					Gui_LEFT_DIALOG_SPACING, dialogWidth /* allow to extend into the margin */,
+					Gui_LEFT_DIALOG_SPACING, dialogWidth - Gui_LEFT_DIALOG_SPACING - 100,
 					ylabel, ylabel + textFieldHeight,
 					theFinishBuffer.string, 0
 				);
@@ -1450,7 +1446,7 @@ void UiForm_finish (UiForm me) {
 				appendColon ();
 				const int ylabel = thy y + 5 - headerLabelHeight - Gui_VERTICAL_DIALOG_SPACING_SAME;
 				thy label = GuiLabel_createShown (form,
-					Gui_LEFT_DIALOG_SPACING, dialogWidth /* allow to extend into the margin */,
+					Gui_LEFT_DIALOG_SPACING, dialogWidth - Gui_LEFT_DIALOG_SPACING - 100,
 					ylabel, ylabel + textFieldHeight,
 					theFinishBuffer.string, 0
 				);

@@ -47,8 +47,8 @@
 #include "oo_DESCRIPTION.h"
 #include "FormantPath_def.h"
 
-void structFormantPath :: v_info () {
-	structDaata :: v_info ();
+void structFormantPath :: v1_info () {
+	structDaata :: v1_info ();
 	MelderInfo_writeLine (U"Number of Formant objects: ", formants . size);
 	for (integer ic = 1; ic <= ceilings.size; ic ++)
 		MelderInfo_writeLine (U"Ceiling ", ic, U": ", ceilings [ic], U" Hz");
@@ -61,7 +61,6 @@ double structFormantPath :: v_getValueAtSample (integer iframe, integer which, i
 
 conststring32 structFormantPath :: v_getUnitText (integer /*level*/, int /*unit*/, uint32 /*flags*/) {
 	return U"Frequency (Hz)";
-	
 };
 
 Thing_implement (FormantPath, Sampled, 0);
@@ -208,9 +207,8 @@ autoINTVEC FormantPath_getOptimumPath (FormantPath me, double qWeight, double fr
 		/*
 			Backtrack
 		*/
-		for (integer itime = my nx; itime > 1; itime --) {
+		for (integer itime = my nx; itime > 1; itime --)
 			path [itime - 1] = psi [path [itime]] [itime];
-		}
 		if (out_delta)
 			*out_delta = thee.move();
 		return path;
@@ -319,7 +317,7 @@ autoMatrix FormantPath_to_Matrix_qSums (FormantPath me, integer numberOfTracks) 
 				const integer currentNumberOfFormants = std::min (numberOfTracks, frame -> numberOfFormants);
 				longdouble qsum = 0.0;
 				for (integer itrack = 1; itrack <= currentNumberOfFormants; itrack ++)
-					qsum += frame -> formant [itrack] . frequency / frame-> formant [itrack]. bandwidth;
+					qsum += frame -> formant [itrack]. frequency / frame -> formant [itrack]. bandwidth;
 				thy z [iformant] [itime] = ( currentNumberOfFormants > 0 ? (double) (qsum / currentNumberOfFormants) : 0.0 );
 			}
 		}
@@ -345,10 +343,10 @@ autoMatrix FormantPath_to_Matrix_transition (FormantPath me, integer numberOfTra
 					const integer ntracks = std::min (ffj -> numberOfFormants, numberOfTracks_i);
 					longdouble transitionCosts = 0.0;
 					for (integer itrack = 1; itrack <= ntracks; itrack ++) {
-						const double fi = ffi -> formant [itrack].frequency, fj = ffj -> formant [itrack] . frequency;
+						const double fi = ffi -> formant [itrack]. frequency, fj = ffj -> formant [itrack]. frequency;
 						const double dif = fabs (fi  - fj);
 						const double sum = fi  + fj;
-						const double bw = sqrt (ffi -> formant [itrack] . bandwidth * ffj -> formant [itrack] . bandwidth);
+						const double bw = sqrt (ffi -> formant [itrack]. bandwidth * ffj -> formant [itrack]. bandwidth);
 						double cost = bw * dif / sum;
 						if (Melder_debug == -3)
 							cost = fabs (NUMlog2 (fi / fj));
@@ -377,7 +375,8 @@ autoMatrix FormantPath_to_Matrix_stress (FormantPath me, double windowLength, co
 		const integer numberOfDataPoints = (windowLength + 0.5 * my dx) / my dx;
 		Melder_require (numberOfDataPoints >= maximumNumberOfCoefficients,
 			U"The window length is too short for the number of coefficients you use in the stress determination (",
-			maximumNumberOfCoefficients, U"). Either increase your window length or decrease the number of coefficents per track.");
+			maximumNumberOfCoefficients, U"). Either increase your window length or decrease the number of coefficents per track."
+		);
 		while (fromFormant <= parameters.size && parameters [fromFormant] <= 0)
 			fromFormant ++;
 		integer toFormant = parameters.size;
@@ -546,9 +545,10 @@ void FormantPath_drawAsGrid_inside (FormantPath me, Graphics g, double tmin, dou
 	constexpr double fmin = 0.0;
 	if (nrow <= 0 || ncol <= 0)
 		FormantPath_getGridDimensions (me, & nrow, & ncol);
-	double x1NDC, x2NDC, y1NDC, y2NDC, newFontSize;
+	double x1NDC, x2NDC, y1NDC, y2NDC;
 	Graphics_inqViewport (g, & x1NDC, & x2NDC, & y1NDC, & y2NDC);
 	const double fontSize_old = Graphics_inqFontSize (g);
+	double newFontSize = fontSize_old;
 	
 	const double vp_width = x2NDC - x1NDC, vp_height = y2NDC - y1NDC;
 	const double vpi_width = vp_width / (ncol + (ncol - 1) * spaceBetweenFraction_x);
@@ -571,14 +571,9 @@ void FormantPath_drawAsGrid_inside (FormantPath me, Graphics g, double tmin, dou
 		Graphics_setViewport (g, vpi_x1, vpi_x2, vpi_y1, vpi_y2);
 		Graphics_setWindow (g, tmin, tmax, fmin, fmax);
 		if (iformant == 1) {
-			const double pointsPerMillimetre = g -> resolution / 25.4;
-			const double areaWidth_points = Graphics_dxWCtoMM (g, tmax - tmin) * pointsPerMillimetre;
-			const double areaHeight_points = Graphics_dyWCtoMM (g, spaceBetweenFraction_y * (fmax - fmin)) * pointsPerMillimetre;
-			const double maxNumberOfCharacters_line = 18.0, maxNumberOfLines = 2.5;
-			newFontSize = std::min (areaHeight_points / maxNumberOfLines , areaWidth_points / maxNumberOfCharacters_line);
+			newFontSize = Graphics_getFontSizeInsideBox (g, tmax - tmin, spaceBetweenFraction_y * (fmax - fmin), 18.0, 3.0);
 			Graphics_setFontSize (g, newFontSize);
 		}
-
 		if (garnish && markCandidatesWithinPath) {
 			for (integer interval = 1; interval <= intervalTier -> intervals.size; interval ++) {
 				TextInterval textInterval = intervalTier -> intervals.at [interval];

@@ -23,12 +23,7 @@
 #include "praat_script.h"
 #include "sendsocket.h"
 
-#include "enums_getText.h"
-#include "Editor_enums.h"
-#include "enums_getValue.h"
-#include "Editor_enums.h"
-
-Thing_implement (Editor, Thing, 0);
+Thing_implement (Editor, DataGui, 0);
 
 #include "Prefs_define.h"
 #include "Editor_prefs.h"
@@ -53,7 +48,7 @@ static void commonCallback (EditorCommand me, GuiMenuItemEvent /* event */) {
 		UiHistory_write_colonize (my itemTitle.get());
 	}
 	try {
-		my commandCallback (my d_editor, me, nullptr, 0, nullptr, nullptr, nullptr);
+		my commandCallback (my sender___, me, nullptr, 0, nullptr, nullptr, nullptr);
 	} catch (MelderError) {
 		if (! Melder_hasError (U"Script exited."))
 			Melder_appendError (U"Menu command \"", my itemTitle.get(), U"\" not completed.");
@@ -61,20 +56,34 @@ static void commonCallback (EditorCommand me, GuiMenuItemEvent /* event */) {
 	}
 }
 
-GuiMenuItem EditorMenu_addCommand (EditorMenu me, conststring32 itemTitle /* cattable */, uint32 flags, EditorCommandCallback commandCallback)
+GuiMenuItem DataGuiMenu_addCommand (EditorMenu me, conststring32 itemTitle /* cattable */, uint32 flags,
+	DataGuiCommandCallback commandCallback, DataGui optionalSender)
 {
 	autoEditorCommand thee = Thing_new (EditorCommand);
 	thy d_editor = my d_editor;
+	thy sender___ = ( optionalSender ? optionalSender : thy d_editor );
 	thy menu = me;
 	thy itemTitle = Melder_dup (itemTitle);
+	if (! commandCallback)
+		flags |= GuiMenu_INSENSITIVE;
+	const bool titleIsHeader = Melder_stringMatchesCriterion (itemTitle, kMelder_string::ENDS_WITH, U":", true);
+	if (titleIsHeader)
+		flags |= GuiMenu_UNDERLINED;
 	thy itemWidget =
-			! commandCallback ? GuiMenu_addSeparator (my menuWidget) :
-			flags & Editor_HIDDEN ? nullptr :
-			GuiMenu_addItem (my menuWidget, itemTitle, flags, commonCallback, thee.get());   // DANGLE BUG: me can be killed by Collection_addItem(), but EditorCommand::destroy doesn't remove the item
+		titleIsHeader ? GuiMenu_addItem (my menuWidget, itemTitle, flags, nullptr, nullptr) :
+		! commandCallback ? GuiMenu_addSeparator (my menuWidget) :
+		flags & Editor_HIDDEN ? nullptr :
+		GuiMenu_addItem (my menuWidget, itemTitle, flags, commonCallback, thee.get())
+	;   // DANGLE BUG: me can be killed by Collection_addItem(), but EditorCommand::destroy doesn't remove the item
 	thy commandCallback = commandCallback;
 	GuiMenuItem result = thy itemWidget;
 	my commands. addItem_move (thee.move());
 	return result;
+}
+GuiMenuItem EditorMenu_addCommand (EditorMenu me, conststring32 itemTitle /* cattable */, uint32 flags,
+	EditorCommandCallback commandCallback)
+{
+	return DataGuiMenu_addCommand (me, itemTitle, flags, commandCallback.get(), nullptr);
 }
 
 /*GuiObject EditorCommand_getItemWidget (EditorCommand me) { return my itemWidget; }*/
@@ -190,7 +199,7 @@ void Editor_doMenuCommand (Editor me, conststring32 commandTitle, integer narg, 
 
 /********** class Editor **********/
 
-void structEditor :: v_destroy () noexcept {
+void structEditor :: v9_destroy () noexcept {
 	trace (U"enter");
 	MelderAudio_stopPlaying (MelderAudio_IMPLICIT);
 	/*
@@ -223,19 +232,18 @@ void structEditor :: v_destroy () noexcept {
 			}
 		#endif
 	}
-	if (our ownData)
-		forget (our data);
-	Editor_Parent :: v_destroy ();
+	Editor_Parent :: v9_destroy ();
 }
 
-void structEditor :: v_info () {
+void structEditor :: v1_info () {
+	// skipping parent classes
 	MelderInfo_writeLine (U"Editor type: ", Thing_className (this));
 	MelderInfo_writeLine (U"Editor name: ", our name ? our name.get() : U"<no name>");
 	time_t today = time (nullptr);
 	MelderInfo_writeLine (U"Date: ", Melder_peek8to32 (ctime (& today)));   // includes a newline
-	if (our data) {
-		MelderInfo_writeLine (U"Data type: ", our data -> classInfo -> className);
-		MelderInfo_writeLine (U"Data name: ", our data -> name.get());
+	if (our data()) {
+		MelderInfo_writeLine (U"Data type: ", our data() -> classInfo -> className);
+		MelderInfo_writeLine (U"Data name: ", our data() -> name.get());
 	}
 }
 
@@ -245,22 +253,22 @@ void structEditor :: v_nameChanged () {
 }
 
 void structEditor :: v_saveData () {
-	if (! our data)
+	if (! our data())
 		return;
-	our previousData = Data_copy (our data);
+	our previousData = Data_copy (our data());
 }
 
 void structEditor :: v_restoreData () {
-	if (our data && our previousData)
-		Thing_swap (our data, our previousData.get());
+	if (our data() && our previousData)
+		Thing_swap (our data(), our previousData.get());
 }
 
 static void menu_cb_sendBackToCallingProgram (Editor me, EDITOR_ARGS_DIRECT) {
-	if (my data) {
+	if (my data()) {
 		structMelderFile file { };
 		MelderDir_getFile (& Melder_preferencesFolder, U"praat_backToCaller.Data", & file);
-		Data_writeToTextFile (my data, & file);
-		sendsocket (Melder_peek32to8 (my callbackSocket.get()), Melder_peek32to8 (my data -> name.get()));
+		Data_writeToTextFile (my data(), & file);
+		sendsocket (Melder_peek32to8 (my callbackSocket.get()), Melder_peek32to8 (my data() -> name.get()));
 	}
 	my v_goAway ();
 }
@@ -282,13 +290,6 @@ static void menu_cb_undo (Editor me, EDITOR_ARGS_DIRECT) {
 	#elif cocoa
 		[(GuiCocoaMenuItem *) my undoButton -> d_widget   setTitle: (NSString *) Melder_peek32toCfstring (my undoText)];
 	#endif
-	/*
-		Send a message to myself (e.g., I will redraw myself).
-	*/
-	my v_dataChanged ();
-	/*
-		Send a message to my boss (e.g., she will notify the others that depend on me).
-	*/
 	Editor_broadcastDataChanged (me);
 }
 
@@ -307,11 +308,8 @@ static void menu_cb_openScript (Editor me, EDITOR_ARGS_DIRECT) {
 	scriptEditor.releaseToUser();
 }
 
-void structEditor :: v_createMenuItems_file (EditorMenu /* menu */) {
-}
-
 void structEditor :: v_createMenuItems_edit (EditorMenu menu) {
-	if (our data)
+	if (our data())
 		our undoButton = EditorMenu_addCommand (menu, U"Cannot undo", GuiMenu_INSENSITIVE + 'Z', menu_cb_undo);
 }
 
@@ -323,7 +321,8 @@ static void INFO_EDITOR__settingsReport (Editor me, EDITOR_ARGS_DIRECT_WITH_OUTP
 
 static void INFO_DATA__info (Editor me, EDITOR_ARGS_DIRECT_WITH_OUTPUT) {
 	INFO_DATA
-		Thing_info (my data);
+		if (my data())
+			Thing_info (my data());
 	INFO_DATA_END
 }
 
@@ -334,46 +333,40 @@ void structEditor :: v_createMenuItems_query (EditorMenu menu) {
 void structEditor :: v_createMenuItems_query_info (EditorMenu menu) {
 	EditorMenu_addCommand (menu, U"Editor info", 0, INFO_EDITOR__settingsReport);
 	EditorMenu_addCommand (menu, U"Settings report", Editor_HIDDEN, INFO_EDITOR__settingsReport);
-	if (our data)
-		EditorMenu_addCommand (menu, Melder_cat (Thing_className (data), U" info"), 0, INFO_DATA__info);
+	if (our data())
+		EditorMenu_addCommand (menu, Melder_cat (Thing_className (our data()), U" info"), 0, INFO_DATA__info);
 }
 
 void structEditor :: v_createMenus () {
-	EditorMenu menu = Editor_addMenu (this, U"File", 0);
-	v_createMenuItems_file (menu);
-	if (v_editable ()) {
-		menu = Editor_addMenu (this, U"Edit", 0);
-		v_createMenuItems_edit (menu);
+	Editor_Parent :: v_createMenus ();   // does nothing (last checked 2022-07-19)
+	if (our v_hasFileMenu()) {
+		our fileMenu = Editor_addMenu (this, U"File", 0);
+		v_createMenuItems_file (our fileMenu);
 	}
-	if (v_hasQueryMenu ()) {
-		menu = Editor_addMenu (this, U"Query", 0);
-		v_createMenuItems_query (menu);
+	if (our v_hasEditMenu ()) {
+		our editMenu = Editor_addMenu (this, U"Edit", 0);
+		v_createMenuItems_edit (our editMenu);
 	}
-}
-
-BOOLEAN_VARIABLE (v_form_pictureWindow__eraseFirst)
-void structEditor :: v_form_pictureWindow (EditorCommand cmd) {
-	LABEL (U"Picture window:")
-	BOOLEAN_FIELD (v_form_pictureWindow__eraseFirst, U"Erase first", true)
-}
-void structEditor :: v_ok_pictureWindow (EditorCommand cmd) {
-	SET_BOOLEAN (v_form_pictureWindow__eraseFirst, our instancePref_picture_eraseFirst())
-}
-void structEditor :: v_do_pictureWindow (EditorCommand /* cmd */) {
-	our setInstancePref_picture_eraseFirst (v_form_pictureWindow__eraseFirst);
-}
-
-OPTIONMENU_ENUM_VARIABLE (kEditor_writeNameAtTop, v_form_pictureMargins__writeNameAtTop)
-void structEditor :: v_form_pictureMargins (EditorCommand cmd) {
-	LABEL (U"Margins:")
-	OPTIONMENU_ENUM_FIELD (kEditor_writeNameAtTop, v_form_pictureMargins__writeNameAtTop,
-			U"Write name at top", kEditor_writeNameAtTop::DEFAULT)
-}
-void structEditor :: v_ok_pictureMargins (EditorCommand cmd) {
-	SET_ENUM (v_form_pictureMargins__writeNameAtTop, kEditor_writeNameAtTop, our classPref_picture_writeNameAtTop())
-}
-void structEditor :: v_do_pictureMargins (EditorCommand /* cmd */) {
-	our setClassPref_picture_writeNameAtTop (v_form_pictureMargins__writeNameAtTop);
+	if (our v_hasQueryMenu ()) {
+		our queryMenu = Editor_addMenu (this, U"Query", 0);
+		v_createMenuItems_query (our queryMenu);
+	}
+	if (our v_hasViewMenu ()) {
+		our viewMenu = Editor_addMenu (this, U"View", 0);
+		v_createMenuItems_view (our viewMenu);
+	}
+	if (our v_hasSelectMenu ()) {
+		our selectMenu = Editor_addMenu (this, U"Select", 0);
+		v_createMenuItems_select (our selectMenu);
+	}
+	if (our v_hasDrawMenu ()) {
+		our drawMenu = Editor_addMenu (this, U"Draw", 0);
+		v_createMenuItems_draw (our drawMenu);
+	}
+	if (our v_hasExtractMenu ()) {
+		our extractMenu = Editor_addMenu (this, U"Extract", 0);
+		v_createMenuItems_extract (our extractMenu);
+	}
 }
 
 static void gui_window_cb_goAway (Editor me) {
@@ -384,8 +377,7 @@ static void gui_window_cb_goAway (Editor me) {
 
 void praat_addCommandsToEditor (Editor me);
 void Editor_init (Editor me, int x, int y, int width, int height, conststring32 title, Daata data) {
-	my v_copyPreferencesToInstance ();
-	my v_repairPreferences ();
+	DataGui_init (me, data, true, me);   // I am my own boss! BUG: check editability
 	/*
 		Zero widths are taken from the preferences.
 	*/
@@ -464,7 +456,6 @@ void Editor_init (Editor me, int x, int y, int width, int height, conststring32 
 	#endif
 	my windowForm = GuiWindow_create (left, top, width, height, 450, 350, title, gui_window_cb_goAway, me, my v_canFullScreen () ? GuiWindow_FULLSCREEN : 0);
 	Thing_setName (me, title);
-	my data = data;
 
 	/*
 		Create menus.
@@ -478,31 +469,31 @@ void Editor_init (Editor me, int x, int y, int width, int height, conststring32 
 	if (my v_hasMenuBar ()) {
 		my v_createMenus ();
 		EditorMenu helpMenu = Editor_addMenu (me, U"Help", 0);
-		my v_createHelpMenuItems (helpMenu);
+		my v_createMenuItems_help (helpMenu);
 		EditorMenu_addCommand (helpMenu, U"-- search --", 0, nullptr);
 		my searchButton = EditorMenu_addCommand (helpMenu, U"Search manual...", 'M', menu_cb_searchManual);
 		if (my v_scriptable ()) {
-			Editor_addCommand (me, U"File", U"New editor script", 0, menu_cb_newScript);
-			Editor_addCommand (me, U"File", U"Open editor script...", 0, menu_cb_openScript);
-			Editor_addCommand (me, U"File", U"-- after script --", 0, 0);
+			EditorMenu_addCommand (my fileMenu, U"New editor script", 0, menu_cb_newScript);
+			EditorMenu_addCommand (my fileMenu, U"Open editor script...", 0, menu_cb_openScript);
+			EditorMenu_addCommand (my fileMenu, U"-- after script --", 0, 0);
 		}
 		/*
 			Add the scripted commands.
 		*/
 		praat_addCommandsToEditor (me);
 		if (my callbackSocket)
-			Editor_addCommand (me, U"File", U"Send back to calling program", 0, menu_cb_sendBackToCallingProgram);
-		Editor_addCommand (me, U"File", U"Close", 'W', menu_cb_close);
+			EditorMenu_addCommand (my fileMenu, U"Send back to calling program", 0, menu_cb_sendBackToCallingProgram);
+		EditorMenu_addCommand (my fileMenu, U"Close", 'W', menu_cb_close);
 	}
 	GuiThing_show (my windowForm);
 }
 
-void Editor_save (Editor me, conststring32 text) {
+void Editor_save (Editor me, conststring32 cattableText) {
+	Melder_sprint (my undoText,100, U"Undo ", cattableText);
 	my v_saveData ();
 	if (! my undoButton)
 		return;
 	GuiThing_setSensitive (my undoButton, true);
-	Melder_sprint (my undoText,100, U"Undo ", text);
 	#if gtk
 		gtk_label_set_label (GTK_LABEL (gtk_bin_get_child (GTK_BIN (my undoButton -> d_widget))), Melder_peek32to8 (my undoText));
 	#elif motif
@@ -517,14 +508,14 @@ void Editor_openPraatPicture (Editor me) {
 	my pictureGraphics = praat_picture_editor_open (my instancePref_picture_eraseFirst());
 }
 void Editor_closePraatPicture (Editor me) {
-	if (my data && my classPref_picture_writeNameAtTop() != kEditor_writeNameAtTop::NO_) {
+	if (my data() && my classPref_picture_writeNameAtTop() != kDataGui_writeNameAtTop::NO_) {
 		Graphics_setNumberSignIsBold (my pictureGraphics, false);
 		Graphics_setPercentSignIsItalic (my pictureGraphics, false);
 		Graphics_setCircumflexIsSuperscript (my pictureGraphics, false);
 		Graphics_setUnderscoreIsSubscript (my pictureGraphics, false);
 		Graphics_textTop (my pictureGraphics,
-			my classPref_picture_writeNameAtTop() == kEditor_writeNameAtTop::FAR_,
-			my data -> name.get()
+			my classPref_picture_writeNameAtTop() == kDataGui_writeNameAtTop::FAR_,
+			my data() -> name.get()
 		);
 		Graphics_setNumberSignIsBold (my pictureGraphics, true);
 		Graphics_setPercentSignIsItalic (my pictureGraphics, true);

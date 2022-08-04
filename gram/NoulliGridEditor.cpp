@@ -24,7 +24,7 @@
 #include "enums_getValue.h"
 #include "NoulliGridEditor_enums.h"
 
-Thing_implement (NoulliGridEditor, TimeSoundEditor, 0);
+Thing_implement (NoulliGridEditor, FunctionEditor, 0);
 
 #include "Prefs_define.h"
 #include "NoulliGridEditor_prefs.h"
@@ -33,41 +33,16 @@ Thing_implement (NoulliGridEditor, TimeSoundEditor, 0);
 #include "Prefs_copyToInstance.h"
 #include "NoulliGridEditor_prefs.h"
 
-#define SOUND_HEIGHT  0.2
-
-/********** DRAWING AREA **********/
-
-void structNoulliGridEditor :: v_draw () {
-	NoulliGrid data = (NoulliGrid) our data;
-	if (our d_sound.data) {
-		Graphics_Viewport viewport = Graphics_insetViewport (our graphics.get(), 0.0, 1.0, 1.0 - SOUND_HEIGHT, 1.0);
-		Graphics_setColour (our graphics.get(), Melder_WHITE);
-		Graphics_setWindow (our graphics.get(), 0.0, 1.0, 0.0, 1.0);
-		Graphics_fillRectangle (our graphics.get(), 0.0, 1.0, 0.0, 1.0);
-		TimeSoundEditor_drawSound (this, -1.0, 1.0);
-		Graphics_resetViewport (our graphics.get(), viewport);
-		Graphics_insetViewport (our graphics.get(), 0.0, 1.0, 0.0, 1.0 - SOUND_HEIGHT);
-	}
-	NoulliGrid_paintInside (data, our graphics.get(), our startWindow, our endWindow);
-	our v_updateMenuItems_file ();
-}
-
-void structNoulliGridEditor :: v_play (double startTime, double endTime) {
-	if (our d_sound.data)
-		Sound_playPart (our d_sound.data, startTime, endTime, theFunctionEditor_playCallback, this);
-}
-
 static void drawSelectionOrWindow (NoulliGridEditor me, double xmin, double xmax, double tmin, double tmax, conststring32 header) {
-	NoulliGrid grid = (NoulliGrid) my data;
-	for (integer itier = 1; itier <= grid -> tiers.size; itier ++) {
+	for (integer itier = 1; itier <= my noulliGrid() -> tiers.size; itier ++) {
 		if (itier == 1) {
 			Graphics_setColour (my graphics.get(), Melder_BLACK);
 			Graphics_setTextAlignment (my graphics.get(), kGraphics_horizontalAlignment::CENTRE, Graphics_BOTTOM);
 			Graphics_text (my graphics.get(), 0.0, 1.0, header);
 		}
-		autoNoulliPoint average = NoulliGrid_average (grid, itier, tmin, tmax);
+		autoNoulliPoint average = NoulliGrid_average (my noulliGrid(), itier, tmin, tmax);
 		integer winningCategory = NoulliPoint_getWinningCategory (average.get());
-		conststring32 winningCategoryName = grid -> categoryNames [winningCategory].get();
+		conststring32 winningCategoryName = my noulliGrid() -> categoryNames [winningCategory].get();
 		if (winningCategory != 0 && average -> probabilities [winningCategory] > 1.0/3.0) {
 			const bool shouldDrawPicture =
 				(my instancePref_showCategoryInSelectionViewerAs() == kNoulliGridEditor_showCategoryInSelectionViewerAs::PICTURE ||
@@ -184,16 +159,13 @@ void structNoulliGridEditor :: v_prefs_getValues (EditorCommand /* cmd */) {
 	our setInstancePref_showCategoryInSelectionViewerAs (v_prefs_addFields__showCategoryInSelectionViewerAs);
 }
 
-void NoulliGridEditor_init (NoulliGridEditor me, conststring32 title, NoulliGrid data, Sound sound, bool ownSound) {
-	Melder_assert (data);
-	Melder_assert (Thing_isa (data, classNoulliGrid));
-	TimeSoundEditor_init (me, title, data, sound, ownSound);
-}
-
-autoNoulliGridEditor NoulliGridEditor_create (conststring32 title, NoulliGrid grid, Sound sound, bool ownSound) {
+autoNoulliGridEditor NoulliGridEditor_create (conststring32 title, NoulliGrid noulliGrid, Sound optionalSoundToCopy) {
 	try {
 		autoNoulliGridEditor me = Thing_new (NoulliGridEditor);
-		NoulliGridEditor_init (me.get(), title, grid, sound, ownSound);
+		my noulliGridArea() = NoulliGridArea_create (true, nullptr, me.get());
+		if (optionalSoundToCopy)
+			my soundArea() = SoundArea_create (false, optionalSoundToCopy, me.get());
+		FunctionEditor_init (me.get(), title, noulliGrid);
 		return me;
 	} catch (MelderError) {
 		Melder_throw (U"NoulliGrid window not created.");

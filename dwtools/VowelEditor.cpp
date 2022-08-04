@@ -691,11 +691,11 @@ static void updateInfoLabels (VowelEditor me) {
 	if (! my graphics)
 		return;   // could be the case in the very beginning
 	MelderString_append (& statusInfo, U"Start (F1,F2,f0) = (", Melder_fixed (startPoint -> f1, 1), U", ", 
-		Melder_fixed (startPoint -> f2, 1), U", ", startF0, U")");
+		Melder_fixed (startPoint -> f2, 1), U", ", Melder_fixed (startF0, 1), U")");
 	GuiLabel_setText (my startInfo, statusInfo.string);
 	MelderString_empty (& statusInfo);
 	MelderString_append (& statusInfo, U"End (F1,F2,f0) = (", Melder_fixed (endPoint -> f1, 1), U", ", 
-		Melder_fixed (endPoint -> f2, 1), U", ", endF0, U")");
+		Melder_fixed (endPoint -> f2, 1), U", ", Melder_fixed (endF0, 1), U")");
 	GuiLabel_setText (my endInfo, statusInfo.string);	
 }
 
@@ -1182,10 +1182,6 @@ static void updateWidgets (void *void_me) {
 	(void) me;
 }
 
-void structVowelEditor :: v_destroy () noexcept {
-	VowelEditor_Parent :: v_destroy ();
-}
-
 void structVowelEditor :: v_createMenus () {
 	VowelEditor_Parent :: v_createMenus ();
 
@@ -1226,8 +1222,8 @@ void structVowelEditor :: v_createMenus () {
 	Editor_addCommand (this, U"View", U"Trajectory time marks every...", 0, menu_cb_trajectoryTimeMarksEvery);
 }
 
-void structVowelEditor :: v_createHelpMenuItems (EditorMenu menu) {
-	VowelEditor_Parent :: v_createHelpMenuItems (menu);
+void structVowelEditor :: v_createMenuItems_help (EditorMenu menu) {
+	VowelEditor_Parent :: v_createMenuItems_help (menu);
 	EditorMenu_addCommand (menu, U"VowelEditor help", '?', menu_cb_help);
 }
 
@@ -1313,7 +1309,7 @@ void structVowelEditor :: v_createChildren ()
 	our height = GuiControl_getHeight (drawingArea);
 }
 
-void structVowelEditor :: v_repairPreferences () {
+void structVowelEditor :: v9_repairPreferences () {
 	if (! (our instancePref_window_f1min() < our instancePref_window_f1max())) {   // NaN-safe test
 		our setInstancePref_window_f1min (Melder_atof (our default_window_f1min()));
 		our setInstancePref_window_f1max (Melder_atof (our default_window_f1max()));
@@ -1348,14 +1344,15 @@ void structVowelEditor :: v_repairPreferences () {
 		our setInstancePref_grid_df1 (Melder_atof (our default_grid_df1()));
 	if (! (our instancePref_grid_df2() > 0.0))   // NaN-safe test
 		our setInstancePref_grid_df2 (Melder_atof (our default_grid_df2()));
+	VowelEditor_Parent :: v9_repairPreferences ();
 }
 
-autoVowelEditor VowelEditor_create (conststring32 title, Daata data) {
+autoVowelEditor VowelEditor_create (conststring32 title) {
 	try {
 		trace (U"enter");
 		autoVowelEditor me = Thing_new (VowelEditor);
 		Melder_assert (me.get());
-		Editor_init (me.get(), 0, 0, 0, 0, title, data);
+		Editor_init (me.get(), 0, 0, 0, 0, title, nullptr);
 #if motif
 		Melder_assert (XtWindow (my drawingArea -> d_widget));
 #endif

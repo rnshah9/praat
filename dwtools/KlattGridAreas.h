@@ -2,7 +2,7 @@
 #define _KlattGridAreas_h_
 /* KlattGridAreas.h
  *
- * Copyright (C) 2009-2011 David Weenink, 2017,2021 Paul Boersma
+ * Copyright (C) 2009-2011 David Weenink, 2017,2021,2022 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,185 +18,236 @@
  * along with this work. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "RealTierArea.h"
+#include "PitchTierArea.h"
+#include "FormantGridEditor.h"
 #include "KlattGrid.h"
 
-Thing_define (KlattGrid_RealTierArea, RealTierArea) {
-};
-inline void KlattGrid_RealTierArea_init (KlattGrid_RealTierArea me, FunctionEditor editor) {
-	RealTierArea_init (me, editor, 0.0, 1.0);
-}
 
-Thing_define (KlattGrid_OpenPhaseTierArea, KlattGrid_RealTierArea) {
-	double v_minimumLegalY ()
-		override { return 0.0; }
-	double v_maximumLegalY ()
-		override { return 1.0; }
-	conststring32 v_rightTickUnits ()
-		override { return U""; }
-	#include "KlattGrid_OpenPhaseTierArea_prefs.h"
-};
-inline autoKlattGrid_OpenPhaseTierArea KlattGrid_OpenPhaseTierArea_create (FunctionEditor editor) {
-	autoKlattGrid_OpenPhaseTierArea me = Thing_new (KlattGrid_OpenPhaseTierArea);
-	KlattGrid_RealTierArea_init (me.get(), editor);
-	return me;
-}
+#pragma mark - generic areas
 
-Thing_define (KlattGrid_CollisionPhaseTierArea, KlattGrid_RealTierArea) {
-	double v_minimumLegalY ()
-		override { return 0.0; }
-	double v_maximumLegalY ()
-		override { return 1.0; }
-	conststring32 v_rightTickUnits ()
-		override { return U""; }
-	#include "KlattGrid_CollisionPhaseTierArea_prefs.h"
-};
-inline autoKlattGrid_CollisionPhaseTierArea KlattGrid_CollisionPhaseTierArea_create (FunctionEditor editor) {
-	autoKlattGrid_CollisionPhaseTierArea me = Thing_new (KlattGrid_CollisionPhaseTierArea);
-	KlattGrid_RealTierArea_init (me.get(), editor);
-	return me;
-}
-
-Thing_define (KlattGrid_Power1TierArea, KlattGrid_RealTierArea) {
-	double v_minimumLegalY ()
-		override { return 0.0; }
-	conststring32 v_rightTickUnits ()
-		override { return U""; }
-	#include "KlattGrid_Power1TierArea_prefs.h"
-};
-inline autoKlattGrid_Power1TierArea KlattGrid_Power1TierArea_create (FunctionEditor editor) {
-	autoKlattGrid_Power1TierArea me = Thing_new (KlattGrid_Power1TierArea);
-	KlattGrid_RealTierArea_init (me.get(), editor);
-	return me;
-}
-
-Thing_define (KlattGrid_Power2TierArea, KlattGrid_RealTierArea) {
-	double v_minimumLegalY ()
-		override { return 0.0; }
-	conststring32 v_rightTickUnits ()
-		override { return U""; }
-	#include "KlattGrid_Power2TierArea_prefs.h"
-};
-inline autoKlattGrid_Power2TierArea KlattGrid_Power2TierArea_create (FunctionEditor editor) {
-	autoKlattGrid_Power2TierArea me = Thing_new (KlattGrid_Power2TierArea);
-	KlattGrid_RealTierArea_init (me.get(), editor);
-	return me;
-}
-
-Thing_define (KlattGrid_DoublePulsingTierArea, KlattGrid_RealTierArea) {
-	double v_minimumLegalY ()
-		override { return 0.0; }
-	double v_maximumLegalY ()
-		override { return 1.0; }
-	conststring32 v_rightTickUnits ()
-		override { return U""; }
-	#include "KlattGrid_DoublePulsingTierArea_prefs.h"
-};
-inline autoKlattGrid_DoublePulsingTierArea KlattGrid_DoublePulsingTierArea_create (FunctionEditor editor) {
-	autoKlattGrid_DoublePulsingTierArea me = Thing_new (KlattGrid_DoublePulsingTierArea);
-	KlattGrid_RealTierArea_init (me.get(), editor);
-	return me;
-}
-
-Thing_define (KlattGrid_PitchTierArea, KlattGrid_RealTierArea) {
-	double v_minimumLegalY ()
-		override { return 0.0; }
-	conststring32 v_rightTickUnits ()
-		override { return U" Hz"; }
-	#include "KlattGrid_PitchTierArea_prefs.h"
-};
-inline autoKlattGrid_PitchTierArea KlattGrid_PitchTierArea_create (FunctionEditor editor) {
-	autoKlattGrid_PitchTierArea me = Thing_new (KlattGrid_PitchTierArea);
-	KlattGrid_RealTierArea_init (me.get(), editor);
-	return me;
-}
-
-Thing_define (KlattGrid_FlutterTierArea, KlattGrid_RealTierArea) {
-	double v_minimumLegalY ()
-		override { return 0.0; }
-	double v_maximumLegalY ()
-		override { return 1.0; }
-	conststring32 v_rightTickUnits ()
-		override { return U""; }
-	#include "KlattGrid_FlutterTierArea_prefs.h"
-};
-inline autoKlattGrid_FlutterTierArea KlattGrid_FlutterTierArea_create (FunctionEditor editor) {
-	autoKlattGrid_FlutterTierArea me = Thing_new (KlattGrid_FlutterTierArea);
-	KlattGrid_RealTierArea_init (me.get(), editor);
-	return me;
-}
-
-Thing_define (KlattGrid_IntensityTierArea, KlattGrid_RealTierArea) {
+Thing_define (KlattGrid_IntensityTierArea, RealTierArea) {
 	conststring32 v_rightTickUnits ()
 		override { return U" dB"; }
+	conststring32 v_quantityText ()
+		override { return U"Intensity (dB)"; }
+	conststring32 v_setRangeTitle ()
+		override { return U"Set intensity range..."; }
+	conststring32 v_minimumLabelText ()
+		override { return U"Minimum intensity (dB)"; }
+	conststring32 v_maximumLabelText ()
+		override { return U"Maximum intensity (dB)"; }
 	#include "KlattGrid_IntensityTierArea_prefs.h"
 };
-inline autoKlattGrid_IntensityTierArea KlattGrid_IntensityTierArea_create (FunctionEditor editor) {
-	autoKlattGrid_IntensityTierArea me = Thing_new (KlattGrid_IntensityTierArea);
-	KlattGrid_RealTierArea_init (me.get(), editor);
-	return me;
-}
 
 Thing_define (KlattGrid_DecibelTierArea, KlattGrid_IntensityTierArea) {
 	conststring32 v_rightTickUnits ()
 		override { return U" dB"; }
+	conststring32 v_quantityText ()
+		override { return U"Amplitude (dB)"; }
+	conststring32 v_setRangeTitle ()
+		override { return U"Set amplitude range..."; }
+	conststring32 v_minimumLabelText ()
+		override { return U"Minimum amplitude (dB)"; }
+	conststring32 v_maximumLabelText ()
+		override { return U"Maximum amplitude (dB)"; }
 	#include "KlattGrid_DecibelTierArea_prefs.h"
 };
-inline autoKlattGrid_DecibelTierArea KlattGrid_DecibelTierArea_create (FunctionEditor editor) {
-	autoKlattGrid_DecibelTierArea me = Thing_new (KlattGrid_DecibelTierArea);
-	KlattGrid_RealTierArea_init (me.get(), editor);
-	return me;
-}
+DEFINE_FunctionArea_create (KlattGrid_DecibelTierArea, IntensityTier)
+
+#pragma mark - KlattGrid_PitchTierArea
+
+Thing_define (KlattGrid_PitchTierArea, PitchTierArea) {
+	conststring32 v_quantityText ()
+		override { return U"Frequency (Hz)"; }
+	conststring32 v_setRangeTitle ()
+		override { return U"Set frequency range..."; }
+	conststring32 v_minimumLabelText ()
+		override { return U"Minimum frequency (Hz)"; }
+	conststring32 v_maximumLabelText ()
+		override { return U"Maximum frequency (Hz)"; }
+	#include "KlattGrid_PitchTierArea_prefs.h"
+};
+DEFINE_FunctionArea_create (KlattGrid_PitchTierArea, PitchTier)
+
+
+#pragma mark - KlattGrid_VoicingAmplitudeTierArea
 
 Thing_define (KlattGrid_VoicingAmplitudeTierArea, KlattGrid_IntensityTierArea) {
 };
-inline autoKlattGrid_VoicingAmplitudeTierArea KlattGrid_VoicingAmplitudeTierArea_create (FunctionEditor editor) {
-	autoKlattGrid_VoicingAmplitudeTierArea me = Thing_new (KlattGrid_VoicingAmplitudeTierArea);
-	KlattGrid_RealTierArea_init (me.get(), editor);
-	return me;
-}
+DEFINE_FunctionArea_create (KlattGrid_VoicingAmplitudeTierArea, IntensityTier)
 
-Thing_define (KlattGrid_AspirationAmplitudeTierArea, KlattGrid_IntensityTierArea) {
-};
-inline autoKlattGrid_AspirationAmplitudeTierArea KlattGrid_AspirationAmplitudeTierArea_create (FunctionEditor editor) {
-	autoKlattGrid_AspirationAmplitudeTierArea me = Thing_new (KlattGrid_AspirationAmplitudeTierArea);
-	KlattGrid_RealTierArea_init (me.get(), editor);
-	return me;
-}
 
-Thing_define (KlattGrid_BreathinessAmplitudeTierArea, KlattGrid_IntensityTierArea) {
+#pragma mark - KlattGrid_FlutterTierArea
+
+Thing_define (KlattGrid_FlutterTierArea, RealTierArea) {
+	double v_minimumLegalY ()
+		override { return 0.0; }
+	double v_maximumLegalY ()
+		override { return 1.0; }
+	conststring32 v_rightTickUnits ()
+		override { return U""; }
+	conststring32 v_quantityText ()
+		override { return U"Flutter (0..1)"; }
+	conststring32 v_setRangeTitle ()
+		override { return U"Set flutter range..."; }
+	conststring32 v_minimumLabelText ()
+		override { return U"Minimum (0..1)"; }
+	conststring32 v_maximumLabelText ()
+		override { return U"Maximum (0..1)"; }
+	#include "KlattGrid_FlutterTierArea_prefs.h"
 };
-inline autoKlattGrid_BreathinessAmplitudeTierArea KlattGrid_BreathinessAmplitudeTierArea_create (FunctionEditor editor) {
-	autoKlattGrid_BreathinessAmplitudeTierArea me = Thing_new (KlattGrid_BreathinessAmplitudeTierArea);
-	KlattGrid_RealTierArea_init (me.get(), editor);
-	return me;
-}
+DEFINE_FunctionArea_create (KlattGrid_FlutterTierArea, RealTier)
+
+
+#pragma mark - KlattGrid_Power1TierArea
+
+Thing_define (KlattGrid_Power1TierArea, RealTierArea) {
+	double v_minimumLegalY ()
+		override { return 0.0; }
+	conststring32 v_rightTickUnits ()
+		override { return U""; }
+	conststring32 v_quantityText ()
+		override { return U"Power1"; }
+	conststring32 v_setRangeTitle ()
+		override { return U"Set power1 range..."; }
+	conststring32 v_minimumLabelText ()
+		override { return U"Minimum"; }
+	conststring32 v_maximumLabelText ()
+		override { return U"Maximum"; }
+	#include "KlattGrid_Power1TierArea_prefs.h"
+};
+DEFINE_FunctionArea_create (KlattGrid_Power1TierArea, RealTier)
+
+
+#pragma mark - KlattGrid_Power2TierArea
+
+Thing_define (KlattGrid_Power2TierArea, RealTierArea) {
+	double v_minimumLegalY ()
+		override { return 0.0; }
+	conststring32 v_rightTickUnits ()
+		override { return U""; }
+	conststring32 v_quantityText ()
+		override { return U"Power2"; }
+	conststring32 v_setRangeTitle ()
+		override { return U"Set power2 range..."; }
+	conststring32 v_minimumLabelText ()
+		override { return U"Minimum"; }
+	conststring32 v_maximumLabelText ()
+		override { return U"Maximum"; }
+	#include "KlattGrid_Power2TierArea_prefs.h"
+};
+DEFINE_FunctionArea_create (KlattGrid_Power2TierArea, RealTier)
+
+
+#pragma mark - KlattGrid_OpenPhaseTierArea
+
+Thing_define (KlattGrid_OpenPhaseTierArea, RealTierArea) {
+	double v_minimumLegalY ()
+		override { return 0.0; }
+	double v_maximumLegalY ()
+		override { return 1.0; }
+	conststring32 v_rightTickUnits ()
+		override { return U""; }
+	conststring32 v_quantityText ()
+		override { return U"Open phase (0..1)"; }
+	conststring32 v_setRangeTitle ()
+		override { return U"Set open phase range..."; }
+	conststring32 v_minimumLabelText ()
+		override { return U"Minimum (0..1)"; }
+	conststring32 v_maximumLabelText ()
+		override { return U"Maximum (0..1)"; }
+	#include "KlattGrid_OpenPhaseTierArea_prefs.h"
+};
+DEFINE_FunctionArea_create (KlattGrid_OpenPhaseTierArea, RealTier)
+
+
+#pragma mark - KlattGrid_CollisionPhaseTierArea
+
+Thing_define (KlattGrid_CollisionPhaseTierArea, RealTierArea) {
+	double v_minimumLegalY ()
+		override { return 0.0; }
+	double v_maximumLegalY ()
+		override { return 1.0; }
+	conststring32 v_rightTickUnits ()
+		override { return U""; }
+	conststring32 v_quantityText ()
+		override { return U"Collision phase (0..1)"; }
+	conststring32 v_setRangeTitle ()
+		override { return U"Set collision phase range..."; }
+	conststring32 v_minimumLabelText ()
+		override { return U"Minimum (0..1)"; }
+	conststring32 v_maximumLabelText ()
+		override { return U"Maximum (0..1)"; }
+	#include "KlattGrid_CollisionPhaseTierArea_prefs.h"
+};
+DEFINE_FunctionArea_create (KlattGrid_CollisionPhaseTierArea, RealTier)
+
+
+#pragma mark - KlattGrid_DoublePulsingTierArea
+
+Thing_define (KlattGrid_DoublePulsingTierArea, RealTierArea) {
+	double v_minimumLegalY ()
+		override { return 0.0; }
+	double v_maximumLegalY ()
+		override { return 1.0; }
+	conststring32 v_rightTickUnits ()
+		override { return U""; }
+	conststring32 v_quantityText ()
+		override { return U"Double pulsing (0..1)"; }
+	conststring32 v_setRangeTitle ()
+		override { return U"Set double pulsing range..."; }
+	conststring32 v_minimumLabelText ()
+		override { return U"Minimum (0..1)"; }
+	conststring32 v_maximumLabelText ()
+		override { return U"Maximum (0..1)"; }
+	#include "KlattGrid_DoublePulsingTierArea_prefs.h"
+};
+DEFINE_FunctionArea_create (KlattGrid_DoublePulsingTierArea, RealTier)
+
+
+#pragma mark - KlattGrid_SpectralTiltTierArea
 
 Thing_define (KlattGrid_SpectralTiltTierArea, KlattGrid_IntensityTierArea) {
 	#include "KlattGrid_SpectralTiltTierArea_prefs.h"
 };
-inline autoKlattGrid_SpectralTiltTierArea KlattGrid_SpectralTiltTierArea_create (FunctionEditor editor) {
-	autoKlattGrid_SpectralTiltTierArea me = Thing_new (KlattGrid_SpectralTiltTierArea);
-	KlattGrid_RealTierArea_init (me.get(), editor);
-	return me;
-}
+DEFINE_FunctionArea_create (KlattGrid_SpectralTiltTierArea, IntensityTier)
+
+
+#pragma mark - KlattGrid_AspirationAmplitudeTierArea
+
+Thing_define (KlattGrid_AspirationAmplitudeTierArea, KlattGrid_IntensityTierArea) {
+};
+DEFINE_FunctionArea_create (KlattGrid_AspirationAmplitudeTierArea, IntensityTier)
+
+
+#pragma mark - KlattGrid_BreathinessAmplitudeTierArea
+Thing_define (KlattGrid_BreathinessAmplitudeTierArea, KlattGrid_IntensityTierArea) {
+};
+DEFINE_FunctionArea_create (KlattGrid_BreathinessAmplitudeTierArea, IntensityTier)
+
+
+#pragma mark - KlattGrid_FricationBypassTierArea
 
 Thing_define (KlattGrid_FricationBypassTierArea, KlattGrid_IntensityTierArea) {
 	#include "KlattGrid_FricationBypassTierArea_prefs.h"
 };
-inline autoKlattGrid_FricationBypassTierArea KlattGrid_FricationBypassTierArea_create (FunctionEditor editor) {
-	autoKlattGrid_FricationBypassTierArea me = Thing_new (KlattGrid_FricationBypassTierArea);
-	KlattGrid_RealTierArea_init (me.get(), editor);
-	return me;
-}
+DEFINE_FunctionArea_create (KlattGrid_FricationBypassTierArea, IntensityTier)
+
+
+#pragma mark - KlattGrid_FricationAmplitudeTierArea
 
 Thing_define (KlattGrid_FricationAmplitudeTierArea, KlattGrid_IntensityTierArea) {
 };
-inline autoKlattGrid_FricationAmplitudeTierArea KlattGrid_FricationAmplitudeTierArea_create (FunctionEditor editor) {
-	autoKlattGrid_FricationAmplitudeTierArea me = Thing_new (KlattGrid_FricationAmplitudeTierArea);
-	KlattGrid_RealTierArea_init (me.get(), editor);
-	return me;
-}
+DEFINE_FunctionArea_create (KlattGrid_FricationAmplitudeTierArea, IntensityTier)
+
+
+#pragma mark - KlattGrid_FormantGridArea
+Thing_define (KlattGrid_FormantGridArea, FormantGridArea) {
+	bool v_hasSourceMenu ()
+		override { return false; }
+};
+DEFINE_FunctionArea_create (KlattGrid_FormantGridArea, FormantGrid)
+
 
 /* End of file KlattGridAreas.h */
 #endif

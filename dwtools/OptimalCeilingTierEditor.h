@@ -2,7 +2,7 @@
 #define _OptimalCeilingTierEditor_h_
 /* OptimalCeilingTierEditor.h
  *
- * Copyright (C) 2015 David Weenink, 2017,2020,2021 Paul Boersma
+ * Copyright (C) 2015 David Weenink, 2017,2020-2022 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,24 +23,16 @@
 #include "Sound.h"
 
 Thing_define (OptimalCeilingTierEditor, RealTierEditor) {
-	void v_createHelpMenuItems (EditorMenu menu)
+	void v_createMenuItems_help (EditorMenu menu)
 		override;
 	void v_play (double startTime, double endTime)
 		override;
-	conststring32 v_quantityText ()
-		override { return U"Frequency (Hz)"; }
-	conststring32 v_setRangeTitle ()
-		override { return U"Set frequency range..."; }
-	conststring32 v_minimumLabelText ()
-		override { return U"Minimum frequency (Hz)"; }
-	conststring32 v_maximumLabelText ()
-		override { return U"Maximum frequency (Hz)"; }
 };
 
 autoOptimalCeilingTierEditor OptimalCeilingTierEditor_create (conststring32 title,
-	OptimalCeilingTier amplitude,
-	Sound sound,   // may be null
-	bool ownSound);
+	OptimalCeilingTier optimalCeilingTier,   // main data
+	Sound sound   // may be null
+);
 
 /* End of file OptimalCeilingTierEditor.h */
 #endif

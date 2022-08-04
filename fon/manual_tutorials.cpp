@@ -24,6 +24,9 @@ void manual_tutorials_init (ManPages me) {
 
 MAN_BEGIN (U"What's new?", U"ppgb", 20220518)
 INTRO (U"Latest changes in Praat.")
+NORMAL (U"##6.2.14# (24 May 2022)")
+LIST_ITEM (U"• TextGrid window: repaired a bug introduced in 6.2.10 by which a click on the boundary insertion circle "
+	"would copy the contents of a new interval from another tier (if that other tier stood selected).")
 NORMAL (U"##6.2.13# (18 May 2022)")
 LIST_ITEM (U"• Playing a sound on the Mac: prevented an audible click at the end of audio output (appending a silence at the end is no longer needed).")
 LIST_ITEM (U"• FormantPath window: more flexible visualization.")
@@ -4286,7 +4289,7 @@ LIST_ITEM (U"@@Intro 8.2. Manipulation of duration")
 LIST_ITEM (U"@@Intro 8.3. Manipulation of intensity")
 MAN_END
 
-MAN_BEGIN (U"Intro 8.1. Manipulation of pitch", U"ppgb", 20200901)
+MAN_BEGIN (U"Intro 8.1. Manipulation of pitch", U"ppgb", 20220804)
 INTRO (U"To modify the pitch contour of an existing @Sound object, "
 	"you select this @Sound and click ##To Manipulation#. "
 	"A @Manipulation object will then appear in the list. "
@@ -4294,7 +4297,8 @@ INTRO (U"To modify the pitch contour of an existing @Sound object, "
 	"which will show the pitch contour (@PitchTier) as a series of thick blue dots. "
 	"To reduce the number of dots, choose ##Stylize pitch (2 st)# "
 	"from the #Pitch menu; it will then be easy to drag the dots "
-	"around the time–pitch area.")
+	"around the time–pitch area (press the Option key to restrict dragging to vertical, "
+	"and the Command key to restrict dragging to horizontal; mnemonics: Uption, Come Later).")
 NORMAL (U"If you click any of the rectangles "
 	"(or choose any of the #Play commands from the #View menu), "
 	"you will hear the modified sound. By shift-clicking, you will hear "

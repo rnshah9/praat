@@ -1,6 +1,6 @@
 /* praat.cpp
  *
- * Copyright (C) 1992-2021 Paul Boersma
+ * Copyright (C) 1992-2022 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -646,11 +646,13 @@ static void cb_Editor_dataChanged (Editor me) {
 			editingThisObject |= ( theCurrentPraatObjects -> list [iobject]. editors [ieditor] == me );
 		if (editingThisObject) {
 			/*
-				Notify all other editors associated with this object.
+				Notify all editors associated with this object,
+				*including myself*.
+				(last checked 2022-06-12)
 			*/
 			for (int ieditor = 0; ieditor < praat_MAXNUM_EDITORS; ieditor ++) {
 				Editor otherEditor = theCurrentPraatObjects -> list [iobject]. editors [ieditor];
-				if (otherEditor && otherEditor != me)
+				if (otherEditor /*&& otherEditor != me*/)
 					Editor_dataChanged (otherEditor);
 			}
 		}
@@ -1032,7 +1034,8 @@ static void installPraatShellPreferences () {
 	praat_picture_prefs ();   // font...
 	Graphics_prefs ();
 	Ui_prefs ();
-	structEditor     :: f_preferences ();   // erase picture first...
+	structDataGui    :: f_preferences ();   // erase picture first...
+	structEditor     :: f_preferences ();   // shell size...
 	structHyperPage  :: f_preferences ();   // font...
 	Site_prefs ();   // print command...
 	Melder_audio_prefs ();   // asynchronicity, silence after...
@@ -1922,7 +1925,7 @@ void praat_run () {
 
 	trace (U"adding the Quit command");
 	praat_addMenuCommand (U"Objects", U"Praat", U"-- quit --", nullptr, 0, nullptr);
-	praat_addMenuCommand (U"Objects", U"Praat", U"Quit", nullptr, praat_UNHIDABLE | 'Q' | praat_NO_API, DO_Quit);
+	praat_addMenuCommand (U"Objects", U"Praat", U"Quit", nullptr, GuiMenu_UNHIDABLE | 'Q' | GuiMenu_NO_API, DO_Quit);
 
 	trace (U"read the preferences file, and notify those who want to be notified of this");
 	/* ...namely, those who already have a window (namely, the Picture window),
