@@ -1,0 +1,6 @@
+project: praat
+target: longchar-getinfofromnative
+
+cmds:
+  - cmd: /fuzz_Longchar_getInfoFromNative
+    libfuzzer: true
